@@ -1,11 +1,16 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+from .models import Profile
 
 
 class UserRegistrationSerializer(serializers.ModelSerializer):
     """Сериализатор для регистрации пользователя"""
-
+    telegram_chat_id = serializers.CharField(
+        source='profile.telegram_chat_id',
+        allow_blank=True,
+        required=False
+    )
     email = serializers.EmailField(
         required=True,
         validators=[UniqueValidator(queryset=User.objects.all())]
@@ -24,7 +29,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['username', 'email', 'password', 'password2']
+        fields = ['username', 'email', 'password', 'password2', 'telegram_chat_id']
         extra_kwargs = {
             'username': {'required': True},
             'email': {'required': True},
@@ -47,3 +52,18 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         user.set_password(validated_data['password'])
         user.save()
         return user
+
+    def update(self, instance, validated_data):
+        """Обновление профиля с telegram_chat_id"""
+        profile_data = validated_data.pop('profile', {})
+
+        # Обновляем пользователя
+        instance = super().update(instance, validated_data)
+
+        # Обновляем профиль
+        if profile_data and 'telegram_chat_id' in profile_data:
+            profile, created = Profile.objects.get_or_create(user=instance)
+            profile.telegram_chat_id = profile_data['telegram_chat_id']
+            profile.save()
+
+        return instance

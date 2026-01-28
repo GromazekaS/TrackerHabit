@@ -42,11 +42,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
 
+    'users',
     'habits',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -159,3 +164,9 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': False,
     'UPDATE_LAST_LOGIN': False,
 }
+
+# Настройки CORS (для фронтенда)
+CORS_ALLOW_ALL_ORIGINS = True  # Для разработки. Для продакшена укажите конкретные домены.
+
+# Настройки Telegram бота
+TELEGRAM_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')

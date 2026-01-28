@@ -1,9 +1,11 @@
 from django.contrib.auth.models import User
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .serializers import UserRegistrationSerializer
+
+from .models import Profile
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -46,3 +48,34 @@ class UserRegistrationView(generics.CreateAPIView):
             'access': str(token.access_token),
             'refresh': str(token),
         }, status=status.HTTP_201_CREATED)
+
+
+class TelegramConnectView(generics.UpdateAPIView):
+    """Эндпоинт для привязки Telegram chat_id"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def patch(self, request, *args, **kwargs):
+        user = request.user
+        telegram_chat_id = request.data.get('telegram_chat_id')
+
+        if not telegram_chat_id:
+            return Response(
+                {'error': 'telegram_chat_id обязателен'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Получаем или создаем профиль
+        profile, created = Profile.objects.get_or_create(
+            user=user,
+            defaults={'telegram_chat_id': telegram_chat_id}
+        )
+
+        if not created:
+            profile.telegram_chat_id = telegram_chat_id
+            profile.save()
+
+        return Response({
+            'message': 'Telegram успешно привязан',
+            'telegram_chat_id': telegram_chat_id
+        })
