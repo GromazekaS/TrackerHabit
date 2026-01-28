@@ -170,3 +170,6 @@ CORS_ALLOW_ALL_ORIGINS = True  # Для разработки. Для прода�
 
 # Настройки Telegram бота
 TELEGRAM_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
