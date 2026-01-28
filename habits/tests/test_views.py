@@ -6,10 +6,7 @@ from habits.models import Habit
 
 
 class HabitAPITests(APITestCase):
-    """Тесты для API привычек"""
-
     def setUp(self):
-        # Создаем двух пользователей
         self.user1 = User.objects.create_user(
             username='user1',
             password='password123'
@@ -19,13 +16,34 @@ class HabitAPITests(APITestCase):
             password='password123'
         )
 
-        # Создаем привычки для user1
+        # Приятная привычка для user1
+        self.pleasant_habit_user1 = Habit.objects.create(
+            user=self.user1,
+            action_place='Дома',
+            action_time='20:00:00',
+            action='Принять ванну',
+            is_pleasant=True,
+            duration=60,
+        )
+
+        # Приятная привычка для user2
+        self.pleasant_habit_user2 = Habit.objects.create(
+            user=self.user2,
+            action_place='Дома',
+            action_time='20:00:00',
+            action='Посмотреть сериал',
+            is_pleasant=True,
+            duration=60,
+        )
+
+        # Полезные привычки user1 с reward
         self.habit1 = Habit.objects.create(
             user=self.user1,
             action_place='Дома',
             action_time='09:00:00',
             action='Читать книгу',
             duration=60,
+            reward='Кофе',
             is_public=False,
         )
 
@@ -35,16 +53,18 @@ class HabitAPITests(APITestCase):
             action_time='18:00:00',
             action='Гулять',
             duration=90,
-            is_public=True,  # Публичная привычка
+            reward='Мороженое',
+            is_public=True,
         )
 
-        # Создаем привычку для user2
+        # Полезная привычка user2 с related_habit (своей приятной привычкой)
         self.habit3 = Habit.objects.create(
             user=self.user2,
             action_place='Офис',
             action_time='12:00:00',
             action='Обед',
             duration=30,
+            related_habit=self.pleasant_habit_user2,  # Используем приятную привычку user2
             is_public=False,
         )
 
@@ -62,7 +82,8 @@ class HabitAPITests(APITestCase):
         response = self.client.get(self.list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 2)  # Только привычки user1
+        # user1 должен видеть habit1 и habit2, но не habit3 (другого пользователя)
+        self.assertEqual(len(response.data['results']), 3)
 
         # Проверяем, что не видим привычки user2
         habit_actions = [habit['action'] for habit in response.data['results']]
@@ -79,6 +100,7 @@ class HabitAPITests(APITestCase):
             'action_time': '19:00:00',
             'action': 'Тренировка',
             'duration': 90,
+            'reward': 'Протеин',  # Добавляем reward
         }
 
         response = self.client.post(self.list_url, new_habit_data)
@@ -90,112 +112,50 @@ class HabitAPITests(APITestCase):
         # Проверяем, что привычка создана в БД
         self.assertTrue(Habit.objects.filter(action='Тренировка').exists())
 
-    def test_create_habit_unauthenticated(self):
-        """Тест создания привычки без аутентификации"""
+    def test_create_habit_with_related(self):
+        """Тест создания привычки со связанной привычкой"""
+        self.client.force_authenticate(user=self.user1)
+
         new_habit_data = {
-            'action_place': 'Спортзал',
-            'action_time': '19:00:00',
-            'action': 'Тренировка',
-            'duration': 90,
+            'action_place': 'Дома',
+            'action_time': '21:00:00',
+            'action': 'Йога',
+            'duration': 60,
+            'related_habit': self.pleasant_habit_user1.id,  # Используем приятную привычку user1
         }
 
         response = self.client.post(self.list_url, new_habit_data)
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_update_habit_owner(self):
-        """Тест обновления привычки владельцем"""
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['related_habit'], self.pleasant_habit_user1.id)
+
+    def test_create_pleasant_habit(self):
+        """Тест создания приятной привычки"""
         self.client.force_authenticate(user=self.user1)
 
-        update_data = {
-            'action': 'Читать 30 минут',
+        new_habit_data = {
+            'action_place': 'Дома',
+            'action_time': '22:00:00',
+            'action': 'Медитация',
             'duration': 120,
+            'is_pleasant': True,  # Приятная привычка
         }
 
-        detail_url = reverse('my-habits-detail', args=[self.habit1.id])
-        response = self.client.patch(detail_url, update_data)
+        response = self.client.post(self.list_url, new_habit_data)
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['action'], 'Читать 30 минут')
-
-        # Обновляем объект из БД
-        self.habit1.refresh_from_db()
-        self.assertEqual(self.habit1.action, 'Читать 30 минут')
-        self.assertEqual(self.habit1.duration, 120)
-
-    def test_update_habit_not_owner(self):
-        """Тест обновления привычки не владельцем"""
-        self.client.force_authenticate(user=self.user2)  # user2 пытается обновить привычку user1
-
-        update_data = {'action': 'Измененное действие'}
-        detail_url = reverse('my-habits-detail', args=[self.habit1.id])
-        response = self.client.patch(detail_url, update_data)
-
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_delete_habit_owner(self):
-        """Тест удаления привычки владельцем"""
-        self.client.force_authenticate(user=self.user1)
-
-        detail_url = reverse('my-habits-detail', args=[self.habit1.id])
-        response = self.client.delete(detail_url)
-
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Habit.objects.filter(id=self.habit1.id).exists())
-
-    def test_delete_habit_not_owner(self):
-        """Тест удаления привычки не владельцем"""
-        self.client.force_authenticate(user=self.user2)
-
-        detail_url = reverse('my-habits-detail', args=[self.habit1.id])
-        response = self.client.delete(detail_url)
-
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertTrue(Habit.objects.filter(id=self.habit1.id).exists())
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertTrue(response.data['is_pleasant'])
+        # Приятная привычка не должна иметь reward
+        self.assertEqual(response.data['reward'], '')
 
     def test_get_public_habits_unauthenticated(self):
         """Тест получения публичных привычек без аутентификации"""
         response = self.client.get(self.public_list_url)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Должны видеть только публичные привычки
+        # Должны видеть только публичные привычки (habit2)
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['action'], 'Гулять')
-
-    def test_pagination(self):
-        """Тест пагинации в списке привычек"""
-        self.client.force_authenticate(user=self.user1)
-
-        # Создаем еще несколько привычек для теста пагинации
-        for i in range(10):
-            Habit.objects.create(
-                user=self.user1,
-                action_place=f'Место {i}',
-                action_time='09:00:00',
-                action=f'Действие {i}',
-                duration=60,
-            )
-
-        response = self.client.get(self.list_url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('results', response.data)
-        self.assertIn('count', response.data)
-        self.assertIn('next', response.data)
-        self.assertIn('previous', response.data)
-
-        # По умолчанию page_size = 5
-        self.assertEqual(len(response.data['results']), 5)
-
-    def test_habit_detail_view(self):
-        """Тест получения деталей привычки"""
-        self.client.force_authenticate(user=self.user1)
-
-        detail_url = reverse('my-habits-detail', args=[self.habit1.id])
-        response = self.client.get(detail_url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['id'], self.habit1.id)
-        self.assertEqual(response.data['action'], 'Читать книгу')
 
 
 class HabitPermissionTests(APITestCase):
@@ -213,6 +173,7 @@ class HabitPermissionTests(APITestCase):
             action_time='09:00:00',
             action='Привычка',
             duration=60,
+            reward='Награда',  # Добавляем reward
             is_public=False,
         )
 

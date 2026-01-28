@@ -177,5 +177,5 @@ cython_debug/
 .pypirc
 
 #My
-test_tg_bot.py
+simple_tg_bot.py
 .flake8

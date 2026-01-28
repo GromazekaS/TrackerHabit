@@ -24,13 +24,14 @@ class HabitValidatorsTests(TestCase):
 
     def test_validation_errors(self):
         """Тест всех валидаций в одном тесте"""
-        # Базовые данные для всех тестовых случаев
         base_data = {
             'user': self.user,
             'action_place': 'Дома',
             'action_time': '09:00:00',
             'action': 'Тест',
             'duration': 60,
+            'is_pleasant': False,  # По умолчанию полезная привычка
+            'reward': 'Награда',  # Добавляем reward по умолчанию
         }
 
         test_cases = [
