@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'drf_spectacular',
 
     'users',
     'habits',
@@ -153,6 +154,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 5,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',  # Добавьте эту строку
 }
 
 SIMPLE_JWT = {
@@ -183,3 +185,16 @@ CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Настройки для drf-spectacular
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Habit Tracker API",
+    "VERSION": "1.0.0",
+    "DESCRIPTION": "API для трекера полезных привычек",
+    "SERVE_INCLUDE_SCHEMA": False,  # Не добавлять эндпоинт /schema
+    "SWAGGER_UI_SETTINGS": {
+        "filter": True,  # Включить поиск по тегам
+        "persistAuthorization": True,  # Сохранять авторизацию при перезагрузке
+    },
+    "COMPONENT_SPLIT_REQUEST": True,  # Полезно для корректного отображения запросов
+}
