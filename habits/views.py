@@ -11,7 +11,7 @@ class HabitPagination(PageNumberPagination):
     max_page_size = 50
 
 
-class HabitViewSet(viewsets.ModelViewSet):
+class MyHabitViewSet(viewsets.ModelViewSet):
     """ViewSet для привычек текущего пользователя"""
 
     serializer_class = HabitSerializer

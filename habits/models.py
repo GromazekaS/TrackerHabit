@@ -39,7 +39,7 @@ class Habit(models.Model):
         return f"Я буду {self.action} в {self.action_time} в {self.action_place}"
 
     def clean(self):
-        """Базовые валидации (позже расширим)"""
+        """Базовые валидации"""
         if self.duration > 120:
             raise ValidationError(
                 {'duration': 'Время выполнения не должно превышать 120 секунд'}
