@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
+
 
 load_dotenv()
 
@@ -92,9 +94,6 @@ DATABASES = {
         'PASSWORD': os.getenv('DB_PASSWORD'),
         'HOST': os.getenv('DB_HOST'),
         'PORT': os.getenv('DB_PORT'),
-
-    # 'CONN_MAX_AGE': 0, # Для работы Celery
-
     }
 }
 
@@ -156,7 +155,6 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 5,
 }
 
-from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
@@ -166,7 +164,17 @@ SIMPLE_JWT = {
 }
 
 # Настройки CORS (для фронтенда)
-CORS_ALLOW_ALL_ORIGINS = True  # Для разработки. Для продакшена укажите конкретные домены.
+CORS_ALLOWED_ORIGINS = [
+    #    '<http://localhost:8000>',  # Замените на адрес вашего фронтенд-сервера
+    'https://example.com',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://read-and-write.example.com",  # Замените на адрес вашего фронтенд-сервера
+    # и добавьте адрес бэкенд-сервера
+]
+
+# CORS_ALLOW_ALL_ORIGINS = True  # Для разработки. Для продакшена укажите конкретные домены.
 
 # Настройки Telegram бота
 TELEGRAM_BOT_TOKEN = os.getenv('TG_BOT_TOKEN')

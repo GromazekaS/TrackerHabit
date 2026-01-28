@@ -17,7 +17,7 @@ class Habit(models.Model):
         (7, 'Еженедельно'),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,verbose_name='Пользователь')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='Пользователь')
     action = models.CharField(max_length=500, verbose_name='Действие')
     action_place = models.CharField(max_length=255, verbose_name='Место выполнения')
     action_time = models.TimeField(verbose_name='Время выполнения')
@@ -25,7 +25,7 @@ class Habit(models.Model):
         choices=FREQUENCY_CHOICES,
         default=1,
         verbose_name='Периодичность (дней)',
-        validators = [MinValueValidator(1), MaxValueValidator(7)]
+        validators=[MinValueValidator(1), MaxValueValidator(7)]
     )
     duration = models.PositiveIntegerField(
         verbose_name='Время на выполнение (секунды)',

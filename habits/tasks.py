@@ -41,7 +41,7 @@ def send_scheduled_reminders():
         logger.info(f"Дней с создания: {days_since_creation}, частота: {habit.frequency}")
 
         if days_since_creation % habit.frequency != 0:
-            logger.info(f"Пропуск: не подходит по периодичности")
+            logger.info("Пропуск: не подходит по периодичности")
             continue
 
         # Формируем сообщение

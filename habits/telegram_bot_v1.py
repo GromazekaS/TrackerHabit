@@ -5,6 +5,7 @@ from telegram.error import TelegramError
 
 logger = logging.getLogger(__name__)
 
+
 class TelegramBotService:
     """Сервис для работы с Telegram Bot API."""
 

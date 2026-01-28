@@ -178,3 +178,4 @@ cython_debug/
 
 #My
 test_tg_bot.py
+.flake8
